@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telos Command Center</title>
+<style>
+  :root {
+    --green: #047857;
+    --green-btn: #059669;
+    --green-light: #d1fae5;
+    --bg: #f8faf9;
+    --surface: #ffffff;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow: rgba(0,0,0,0.08);
+    --dot: rgba(0,0,0,0.06);
+    --red: #dc2626;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --red-bg: #fef2f2;
+    --green-bg: #ecfdf5;
+    --focus-bg: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1512;
+      --surface: #1a2320;
+      --text: #f0fdf4;
+      --text-secondary: #9ca3af;
+      --border: #2d3a35;
+      --shadow: rgba(0,0,0,0.3);
+      --dot: rgba(255,255,255,0.04);
+      --green-light: #064e3b;
+      --red-bg: #450a0a;
+      --amber-bg: #451a03;
+      --green-bg: #052e16;
+      --focus-bg: linear-gradient(135deg, #052e16 0%, #064e3b 100%);
+    }
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, system-ui, 'SF Pro', 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  /* Header */
+  .header {
+    padding: 32px 40px 0;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  .header h1 { font-size: 34px; font-weight: 700; color: var(--green); letter-spacing: -0.5px; }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 16px; border-radius: 12px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 280ms ease;
+    background: var(--green-btn); color: white;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--shadow); filter: brightness(1.1); }
+  .btn-outline { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+  .btn-outline:hover { background: var(--green-light); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 10px; }
+
+  /* Focus Panel */
+  .focus-panel {
+    margin: 24px 40px; padding: 28px 32px; border-radius: 20px;
+    background: var(--focus-bg); border: 1.5px solid var(--green);
+    box-shadow: 0 4px 24px rgba(4,120,87,0.12);
+  }
+  .focus-panel h2 { font-size: 17px; font-weight: 700; color: var(--green); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1.5px; }
+  .focus-items { display: flex; gap: 16px; flex-wrap: wrap; }
+  .focus-card {
+    flex: 1; min-width: 240px; background: var(--surface); border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 16px var(--shadow); display: flex; gap: 14px; align-items: flex-start;
+    transition: all 280ms ease; border: 1px solid var(--border);
+  }
+  .focus-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--shadow); }
+  .focus-card input[type="checkbox"] {
+    width: 22px; height: 22px; accent-color: var(--green-btn); margin-top: 2px; cursor: pointer; flex-shrink: 0;
+  }
+  .focus-card-content { flex: 1; }
+  .focus-card-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .focus-card-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* Progress bar */
+  .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: var(--green-btn); border-radius: 3px; transition: width 400ms ease; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .badge-red { background: var(--red-bg); color: var(--red); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-priority-urgent { background: var(--red-bg); color: var(--red); }
+  .badge-priority-important { background: var(--amber-bg); color: var(--amber); }
+  .badge-priority-normal { background: var(--green-bg); color: var(--green); }
+
+  /* Energy dots */
+  .energy-dot {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block; cursor: help; flex-shrink: 0;
+  }
+  .energy-high { background: #ef4444; }
+  .energy-medium { background: #eab308; }
+  .energy-low { background: #22c55e; }
+
+  /* Obsidian link */
+  .obsidian-link { text-decoration: none; font-size: 14px; cursor: pointer; opacity: 0.7; transition: opacity 200ms; }
+  .obsidian-link:hover { opacity: 1; }
+
+  /* Kanban */
+  .kanban { display: flex; gap: 20px; padding: 24px 40px; overflow-x: auto; align-items: flex-start; }
+  .column {
+    min-width: 300px; max-width: 340px; flex: 1; background: var(--surface);
+    border-radius: 16px; padding: 20px; box-shadow: 0 4px 16px var(--shadow);
+    border: 1px solid var(--border); transition: all 280ms ease;
+  }
+  .column.drag-over { border-color: var(--green); box-shadow: 0 4px 24px rgba(4,120,87,0.15); }
+  .column-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  }
+  .column-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); }
+  .column-count {
+    background: var(--green-light); color: var(--green); font-size: 12px; font-weight: 700;
+    padding: 2px 10px; border-radius: 99px;
+  }
+  .card-list { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+  .card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+    cursor: grab; transition: all 280ms ease; position: relative;
+  }
+  .card:hover { box-shadow: 0 4px 16px var(--shadow); transform: translateY(-1px); }
+  .card.dragging { opacity: 0.4; transform: rotate(2deg); }
+  .card-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; outline: none; }
+  .card-title:focus { border-bottom: 1.5px solid var(--green); }
+  .card-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+  .card-delete {
+    position: absolute; top: 8px; right: 10px; background: none; border: none;
+    color: var(--text-secondary); cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 200ms;
+    line-height: 1;
+  }
+  .card:hover .card-delete { opacity: 0.6; }
+  .card-delete:hover { opacity: 1 !important; color: var(--red); }
+  .add-btn {
+    width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1.5px dashed var(--border);
+    background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all 200ms;
+  }
+  .add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+
+  /* Import panel */
+  .import-panel {
+    margin: 0 40px 16px; background: var(--surface); border-radius: 16px; padding: 20px;
+    border: 1px solid var(--border); box-shadow: 0 4px 16px var(--shadow);
+    display: none;
+  }
+  .import-panel.open { display: block; }
+  .import-panel textarea {
+    width: 100%; height: 200px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px;
+    border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; resize: vertical;
+    background: var(--bg); color: var(--text); margin-bottom: 12px;
+  }
+  .import-panel textarea:focus { outline: none; border-color: var(--green); }
+
+  /* Activity footer */
+  .activity-footer {
+    margin: 16px 40px 40px; background: var(--surface); border-radius: 16px; padding: 20px 24px;
+    border: 1px solid var(--border); box-shadow: 0 4px 16px var(--shadow);
+  }
+  .activity-footer h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); margin-bottom: 12px; }
+  .activity-item { font-size: 14px; color: var(--text-secondary); padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+  .activity-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-btn); flex-shrink: 0; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header, .kanban, .focus-panel, .import-panel, .activity-footer { padding-left: 16px; padding-right: 16px; margin-left: 16px; margin-right: 16px; }
+    .kanban { flex-direction: column; }
+    .column { min-width: unset; max-width: unset; }
+    .header h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ Telos Command Center</h1>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="toggleImport()">📋 Import / Export</button>
+    <button class="btn" onclick="copyMarkdown()">📄 Copy Markdown</button>
+  </div>
+</div>
+
+<div id="focusPanel" class="focus-panel"></div>
+
+<div id="importPanel" class="import-panel">
+  <textarea id="importArea" placeholder="Paste telos-board.md content here..."></textarea>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-sm" onclick="loadFromTextarea()">⬆️ Load Board</button>
+    <button class="btn btn-sm btn-outline" onclick="exportToTextarea()">⬇️ Export to Textarea</button>
+    <button class="btn btn-sm btn-outline" onclick="toggleImport()">Close</button>
+  </div>
+</div>
+
+<div id="kanban" class="kanban"></div>
+<div id="activityFooter" class="activity-footer" style="display:none;"></div>
+
+<script>
+const BOARD_MD = `## 🎯 FOCUS NOW
+- [ ] Ship Chain Day to App Store | priority:urgent | progress:80 | due:2026-02-28 | energy:high
+- [ ] Japan relocation prep | priority:urgent | progress:40 | due:2026-03-15 | energy:high
+- [ ] Build freelance income | priority:important | energy:medium
+
+## 📋 NEXT UP
+- [ ] Japanese JLPT N5 study | priority:important | energy:medium
+- [ ] YouTube channel launch | priority:normal | energy:high
+- [ ] Course/digital product creation | priority:normal | energy:medium
+- [ ] Instagram content system | priority:normal | energy:low
+
+## 🔄 IN PROGRESS
+- [ ] Set up Twitter | priority:important | energy:low
+- [ ] Onboarding flow (PR coming) | priority:urgent | energy:high
+- [ ] Rebase conflict PRs (#369 annual pricing, #371 toast, #367, #364) | priority:important | energy:medium
+- [ ] BJJ training | priority:normal | energy:high
+- [ ] Huberman protocols | priority:normal | energy:low
+- [ ] Daily intentions (Telos) | priority:normal | energy:low
+- [ ] Content creation pipeline | priority:normal | energy:medium
+
+## ✅ DONE
+- [x] ASO assets — App Store description, keywords, screenshot copy | moved:2026-02-07
+- [x] UI/UX quick wins PR #410 (FAB color, card height, CTA, radius drift) | moved:2026-02-06
+- [x] Fix template import bug (PR #409) | moved:2026-02-06
+- [x] Recurring audit type fixes (PR #408) | moved:2026-02-05
+- [x] Full UI/UX audit — 10 quick wins, 7 medium, 6 big bets | moved:2026-02-05
+- [x] Closed 11 stale PRs | moved:2026-02-04
+- [x] Merged 5 ready PRs (#408, #410, #409, #368, #366) | moved:2026-02-04
+- [x] Telos Command Center kanban (markdown-powered) | moved:2026-02-08
+- [x] Obsidian vault indexed | moved:2026-02-03
+- [x] Obsidian vault migration (600+ notes) | moved:2026-02-02
+- [x] Telos life system setup | moved:2026-02-01
+- [x] Chain Day app development | moved:2026-01-30
+- [x] Japan 2-week test trip planning | moved:2026-01-28
+
+## 📝 MANUAL REVIEW
+- [ ] PR #409 — Template import bug fix (3 bugs) | priority:urgent | energy:medium
+- [ ] PR #410 — UI/UX quick wins (6 fixes) | priority:important | energy:low
+
+## 🧊 BACKLOG
+- [ ] Dating strategy for Japan | priority:normal | energy:low
+- [ ] Post-Japan living plan | priority:normal | energy:medium
+- [ ] Airborne certification | priority:normal | energy:high
+- [ ] Personal brand expansion | priority:normal | energy:medium`;
+
+// Column config
+const COL_CONFIG = {
+  '🎯 FOCUS NOW': { icon: '🎯', key: 'focus-now' },
+  '📋 NEXT UP': { icon: '📋', key: 'next-up' },
+  '🔄 IN PROGRESS': { icon: '🔄', key: 'in-progress' },
+  '✅ DONE': { icon: '✅', key: 'done' },
+  '📝 MANUAL REVIEW': { icon: '📝', key: 'manual-review' },
+  '🧊 BACKLOG': { icon: '🧊', key: 'backlog' },
+};
+
+let board = {}; // { columnName: [{ title, done, priority, progress, due, moved, note, energy }] }
+
+function parseMarkdown(md) {
+  const b = {};
+  let currentCol = null;
+  for (const line of md.split('\n')) {
+    const colMatch = line.match(/^## (.+)$/);
+    if (colMatch) { currentCol = colMatch[1].trim(); b[currentCol] = []; continue; }
+    if (!currentCol) continue;
+    const itemMatch = line.match(/^- \[([ x])\] (.+)$/);
+    if (!itemMatch) continue;
+    const done = itemMatch[1] === 'x';
+    const raw = itemMatch[2];
+    const parts = raw.split(' | ');
+    const title = parts[0].trim();
+    const meta = {};
+    for (let i = 1; i < parts.length; i++) {
+      const [k, v] = parts[i].split(':');
+      if (k && v) meta[k.trim()] = v.trim();
+    }
+    b[currentCol] = b[currentCol] || [];
+    b[currentCol].push({ title, done, priority: meta.priority, progress: meta.progress ? parseInt(meta.progress) : null, due: meta.due, moved: meta.moved, note: meta.note, energy: meta.energy });
+  }
+  return b;
+}
+
+function toMarkdown() {
+  let md = '';
+  for (const [col, cards] of Object.entries(board)) {
+    md += `## ${col}\n`;
+    for (const c of cards) {
+      const check = c.done ? 'x' : ' ';
+      let line = `- [${check}] ${c.title}`;
+      if (c.priority) line += ` | priority:${c.priority}`;
+      if (c.progress != null) line += ` | progress:${c.progress}`;
+      if (c.due) line += ` | due:${c.due}`;
+      if (c.energy) line += ` | energy:${c.energy}`;
+      if (c.moved) line += ` | moved:${c.moved}`;
+      if (c.note) line += ` | note:${c.note}`;
+      md += line + '\n';
+    }
+    md += '\n';
+  }
+  return md.trim();
+}
+
+function deadlineBadge(due) {
+  if (!due) return '';
+  const now = new Date(); now.setHours(0,0,0,0);
+  const d = new Date(due + 'T00:00:00'); 
+  const diff = Math.ceil((d - now) / 86400000);
+  let cls, label;
+  if (diff < 0) { cls = 'badge-red'; label = `${Math.abs(diff)}d overdue`; }
+  else if (diff === 0) { cls = 'badge-red'; label = 'Due today'; }
+  else if (diff <= 7) { cls = 'badge-amber'; label = `${diff}d left`; }
+  else { cls = 'badge-green'; label = `${diff}d left`; }
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function energyDot(energy) {
+  if (!energy) return '';
+  return `<span class="energy-dot energy-${energy}" title="Energy: ${energy}"></span>`;
+}
+
+function obsidianLink(note) {
+  if (!note) return '';
+  return `<a class="obsidian-link" href="obsidian://open?vault=Andres&file=Telos/${encodeURIComponent(note)}" title="${note}">📎</a>`;
+}
+
+function priorityBadge(p) {
+  if (!p) return '';
+  return `<span class="badge badge-priority-${p}">${p}</span>`;
+}
+
+function renderFocusPanel() {
+  const focusCol = Object.keys(board).find(k => k.includes('FOCUS NOW'));
+  const el = document.getElementById('focusPanel');
+  if (!focusCol || !board[focusCol] || board[focusCol].length === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const top3 = board[focusCol].filter(c => !c.done).slice(0, 3);
+  el.innerHTML = `<h2>⚡ Today's Focus</h2><div class="focus-items">${top3.map((c, i) => `
+    <div class="focus-card">
+      <input type="checkbox" onchange="markFocusDone(${i})" />
+      <div class="focus-card-content">
+        <div class="focus-card-title">${c.title}</div>
+        <div class="focus-card-meta">
+          ${priorityBadge(c.priority)}${deadlineBadge(c.due)}${energyDot(c.energy)}${obsidianLink(c.note)}
+        </div>
+        ${c.progress != null ? `<div class="progress-bar"><div class="progress-fill" style="width:${c.progress}%"></div></div>` : ''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function markFocusDone(idx) {
+  const focusCol = Object.keys(board).find(k => k.includes('FOCUS NOW'));
+  const doneCol = Object.keys(board).find(k => k.includes('DONE'));
+  if (!focusCol || !doneCol) return;
+  const undone = board[focusCol].filter(c => !c.done);
+  const card = undone[idx];
+  if (!card) return;
+  board[focusCol] = board[focusCol].filter(c => c !== card);
+  card.done = true;
+  card.moved = new Date().toISOString().slice(0, 10);
+  board[doneCol].unshift(card);
+  render();
+}
+
+function renderCard(card, colIdx, cardIdx) {
+  return `<div class="card" draggable="true" data-col="${colIdx}" data-card="${cardIdx}"
+    ondragstart="onDragStart(event)" ondragend="onDragEnd(event)">
+    <button class="card-delete" onclick="deleteCard(${colIdx},${cardIdx})" title="Delete">✕</button>
+    <div class="card-title" contenteditable="true" onblur="editCard(${colIdx},${cardIdx},this)">${card.title}</div>
+    <div class="card-meta">
+      ${priorityBadge(card.priority)}${deadlineBadge(card.due)}${energyDot(card.energy)}${obsidianLink(card.note)}
+    </div>
+    ${card.progress != null ? `<div class="progress-bar"><div class="progress-fill" style="width:${card.progress}%"></div></div>` : ''}
+  </div>`;
+}
+
+function renderKanban() {
+  const el = document.getElementById('kanban');
+  const cols = Object.entries(board);
+  el.innerHTML = cols.map(([name, cards], ci) => `
+    <div class="column" data-col="${ci}" ondragover="onDragOver(event)" ondrop="onDrop(event,${ci})" ondragleave="onDragLeave(event)">
+      <div class="column-header">
+        <span class="column-title">${name}</span>
+        <span class="column-count">${cards.length}</span>
+      </div>
+      <div class="card-list">${cards.map((c, cdi) => renderCard(c, ci, cdi)).join('')}</div>
+      <button class="add-btn" onclick="addCard(${ci})">+ Add card</button>
+    </div>`).join('');
+}
+
+function renderActivity() {
+  const el = document.getElementById('activityFooter');
+  const all = [];
+  for (const [col, cards] of Object.entries(board)) {
+    for (const c of cards) {
+      if (c.moved) all.push({ title: c.title, moved: c.moved, col });
+    }
+  }
+  all.sort((a, b) => b.moved.localeCompare(a.moved));
+  const recent = all.slice(0, 5);
+  if (recent.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const fmt = d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+  el.innerHTML = `<h3>📊 Recent Activity</h3>${recent.map(r =>
+    `<div class="activity-item"><span class="dot"></span>${r.title} — <strong>${fmt(r.moved)}</strong></div>`
+  ).join('')}`;
+}
+
+function render() {
+  renderFocusPanel();
+  renderKanban();
+  renderActivity();
+}
+
+// Drag & Drop
+let dragCol, dragCard;
+function onDragStart(e) {
+  dragCol = +e.target.dataset.col; dragCard = +e.target.dataset.card;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(e) { e.target.classList.remove('dragging'); }
+function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, targetCol) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  if (dragCol === undefined) return;
+  const cols = Object.keys(board);
+  const card = board[cols[dragCol]].splice(dragCard, 1)[0];
+  if (cols[targetCol].includes('DONE')) { card.done = true; card.moved = new Date().toISOString().slice(0, 10); }
+  board[cols[targetCol]].push(card);
+  dragCol = dragCard = undefined;
+  render();
+}
+
+function addCard(colIdx) {
+  const cols = Object.keys(board);
+  board[cols[colIdx]].push({ title: 'New card', done: false });
+  render();
+  // Focus the new card
+  const allCards = document.querySelectorAll(`.column[data-col="${colIdx}"] .card-title`);
+  const last = allCards[allCards.length - 1];
+  if (last) { last.focus(); document.execCommand('selectAll'); }
+}
+
+function editCard(colIdx, cardIdx, el) {
+  const cols = Object.keys(board);
+  board[cols[colIdx]][cardIdx].title = el.textContent.trim();
+}
+
+function deleteCard(colIdx, cardIdx) {
+  const cols = Object.keys(board);
+  board[cols[colIdx]].splice(cardIdx, 1);
+  render();
+}
+
+function copyMarkdown() {
+  navigator.clipboard.writeText(toMarkdown()).then(() => {
+    const btn = document.querySelector('.header-actions .btn:last-child');
+    const orig = btn.textContent; btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+function toggleImport() {
+  document.getElementById('importPanel').classList.toggle('open');
+}
+function loadFromTextarea() {
+  const md = document.getElementById('importArea').value;
+  if (!md.trim()) return;
+  board = parseMarkdown(md);
+  render();
+  toggleImport();
+}
+function exportToTextarea() {
+  document.getElementById('importArea').value = toMarkdown();
+}
+
+// Init
+board = parseMarkdown(BOARD_MD);
+render();
+</script>
+</body>
+</html>
